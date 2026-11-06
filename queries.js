@@ -111,3 +111,113 @@ const problem6 = transactions.aggregate([
 problem6.forEach(function(result) {
   printjson(result);
 });
+
+// Part 3 - Problem 1
+print("\nPart 3 - Problem 1");
+// Get total valid records first to compute percentages
+const totalRentals = transactions.countDocuments({"rented for": {$nin: [null, ""]}});
+
+const problem7 = transactions.aggregate([
+  {$match: {"rented for": {$nin: [null, ""]}}},
+  {$group: {
+    _id: "$rented for",
+    count: {$sum: 1}
+  }},
+  {$sort: {count: -1}},
+  {$project: {
+    _id: 0,
+    rented_for: "$_id",
+    count: 1,
+    pct: {$round: [{$multiply: [{$divide: ["$count", totalRentals]}, 100]}, 1]}
+  }}
+], {allowDiskUse: true});
+
+problem7.forEach(function(result) {
+  printjson(result);
+});
+
+
+// Part 3 - Problem 2
+print("\nPart 3 - Problem 2");
+const problem8 = transactions.aggregate([
+  {$match: {review_date: {$nin: [null, ""]}}},
+  {$project: {
+    date: {$dateFromString: {dateString: "$review_date"}}
+  }},
+  {$project: {
+    year: {$year: "$date"},
+    month: {$month: "$date"}
+  }},
+  {$match: {year: 2016}},
+  {$group: {
+    _id: "$month",
+    rentals: {$sum: 1}
+  }},
+  {$sort: {_id: 1}},
+  {$project: {
+    _id: 0,
+    year: {$literal: 2016},
+    month: "$_id",
+    rentals: 1
+  }}
+], {allowDiskUse: true});
+
+problem8.forEach(function(result) {
+  printjson(result);
+});
+
+
+// Part 3 - Problem 3
+print("\nPart 3 - Problem 3");
+const problem9 = transactions.aggregate([
+  // Match valid user and date fields
+  {$match: {
+    user_id: {$nin: [null, ""]},
+    review_date: {$nin: [null, ""]}
+  }},
+  {$project: {
+    user_id: {$toString: "$user_id"},
+    date: {$dateFromString: {dateString: "$review_date"}}
+  }},
+  // Truncate the transaction dates to the start of the month to simplify cohort math
+  {$project: {
+    user_id: 1,
+    txn_month_date: {$dateTrunc: {date: "$date", unit: "month"}}
+  }},
+  // Group by user to find their cohort (first rental month) and all months they rented
+  {$group: {
+    _id: "$user_id",
+    cohort_date: {$min: "$txn_month_date"},
+    active_months: {$addToSet: "$txn_month_date"}
+  }},
+  // Check if they were active 1, 2, and 3 months after their cohort date
+  {$project: {
+    cohort: {$dateToString: {format: "%Y-%m", date: "$cohort_date"}},
+    m1_active: {$in: [{$dateAdd: {startDate: "$cohort_date", unit: "month", amount: 1}}, "$active_months"]},
+    m2_active: {$in: [{$dateAdd: {startDate: "$cohort_date", unit: "month", amount: 2}}, "$active_months"]},
+    m3_active: {$in: [{$dateAdd: {startDate: "$cohort_date", unit: "month", amount: 3}}, "$active_months"]}
+  }},
+  // Group by the cohort month to aggregate retention counts
+  {$group: {
+    _id: "$cohort",
+    size: {$sum: 1},
+    m1_count: {$sum: {$cond: ["$m1_active", 1, 0]}},
+    m2_count: {$sum: {$cond: ["$m2_active", 1, 0]}},
+    m3_count: {$sum: {$cond: ["$m3_active", 1, 0]}}
+  }},
+  // Format percentages
+  {$project: {
+    _id: 0,
+    cohort: "$_id",
+    size: 1,
+    m1_pct: {$round: [{$multiply: [{$divide: ["$m1_count", "$size"]}, 100]}, 1]},
+    m2_pct: {$round: [{$multiply: [{$divide: ["$m2_count", "$size"]}, 100]}, 1]},
+    m3_pct: {$round: [{$multiply: [{$divide: ["$m3_count", "$size"]}, 100]}, 1]}
+  }},
+  // Sort chronologically by cohort
+  {$sort: {cohort: 1}}
+], {allowDiskUse: true});
+
+problem9.forEach(function(result) {
+  printjson(result);
+});
