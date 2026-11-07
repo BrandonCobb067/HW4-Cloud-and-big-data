@@ -1,10 +1,10 @@
-// HW4 - Parts 1 and 2
+// HW4 - Parts 1, 2, and 3
 const transactions = db.getSiblingDB("rtr").transactions;
 
 // Part 1 - Problem 1
 print("Part 1 - Problem 1");
 const count = transactions.countDocuments({user_id: {$in: ["420272", 420272]}});
-printjson({user_id: "420272", transactions: count});
+print(JSON.stringify({user_id: "420272", transactions: count}, ["user_id", "transactions"], 2));
 
 // Part 1 - Problem 2
 print("\nPart 1 - Problem 2");
@@ -20,8 +20,9 @@ const problem2 = transactions.aggregate([
   {$limit: 10},
   {$project: {_id: 0, user_id: "$_id", first_review: 1}}
 ], {allowDiskUse: true});
+
 problem2.forEach(function(result) {
-  printjson(result);
+  print(JSON.stringify(result, ["user_id", "first_review"], 2));
 });
 
 // Part 1 - Problem 3
@@ -48,8 +49,9 @@ const problem3 = transactions.aggregate([
     avg_rating: {$round: ["$avg_rating", 2]}
   }}
 ], {allowDiskUse: true});
+
 problem3.forEach(function(result) {
-  printjson(result);
+  print(JSON.stringify(result, ["user_id", "category", "rentals", "avg_rating"], 2));
 });
 
 // Part 2 - Problem 1
@@ -68,8 +70,9 @@ const problem4 = transactions.aggregate([
     reviews: 1
   }}
 ], {allowDiskUse: true});
+
 problem4.forEach(function(result) {
-  printjson(result);
+  print(JSON.stringify(result, ["item_id", "avg_rating", "reviews"], 2));
 });
 
 // Part 2 - Problem 2
@@ -88,14 +91,16 @@ const problem5 = transactions.aggregate([
   {$limit: 5},
   {$project: {_id: 0, item_id: "$_id", category: 1, mentions: 1}}
 ], {allowDiskUse: true});
+
 problem5.forEach(function(result) {
-  printjson(result);
+  print(JSON.stringify(result, ["item_id", "category", "mentions"], 2));
 });
 
 // Part 2 - Problem 3
 print("\nPart 2 - Problem 3");
 const stopWords = ["", "a", "an", "the", "and", "or", "to", "of", "in", "on", "for",
   "i", "it", "is", "was", "this", "that", "with", "my", "as", "at", "but", "so"];
+
 const problem6 = transactions.aggregate([
   {$match: {category: "romper"}},
   {$project: {
@@ -108,8 +113,9 @@ const problem6 = transactions.aggregate([
   {$limit: 10},
   {$project: {_id: 0, word: "$_id", count: 1}}
 ], {allowDiskUse: true});
+
 problem6.forEach(function(result) {
-  printjson(result);
+  print(JSON.stringify(result, ["word", "count"], 2));
 });
 
 // Part 3 - Problem 1
@@ -133,9 +139,8 @@ const problem7 = transactions.aggregate([
 ], {allowDiskUse: true});
 
 problem7.forEach(function(result) {
-  printjson(result);
+  print(JSON.stringify(result, ["rented_for", "count", "pct"], 2));
 });
-
 
 // Part 3 - Problem 2
 print("\nPart 3 - Problem 2");
@@ -163,14 +168,13 @@ const problem8 = transactions.aggregate([
 ], {allowDiskUse: true});
 
 problem8.forEach(function(result) {
-  printjson(result);
+  print(JSON.stringify(result, ["year", "month", "rentals"], 2));
 });
-
 
 // Part 3 - Problem 3
 print("\nPart 3 - Problem 3");
+// Match valid user and date fields
 const problem9 = transactions.aggregate([
-  // Match valid user and date fields
   {$match: {
     user_id: {$nin: [null, ""]},
     review_date: {$nin: [null, ""]}
@@ -219,5 +223,5 @@ const problem9 = transactions.aggregate([
 ], {allowDiskUse: true});
 
 problem9.forEach(function(result) {
-  printjson(result);
+  print(JSON.stringify(result, ["cohort", "size", "m1_pct", "m2_pct", "m3_pct"], 2));
 });
