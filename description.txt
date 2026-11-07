@@ -1,0 +1,35 @@
+PART 1
+Problem 1: User Transaction Count
+    Strategy: Uses countDocuments() with an $in query targeting user_id as both string ("420272") and integer (420272) to handle loose typing in JSON imports.
+
+Problem 2: Earliest Ten Users by First Review Date
+    Strategy: Filters out null/empty user IDs, parses string review dates into BSON ISO dates via $dateFromString, groups by user_id to compute the minimum review date using $min, sorts chronologically by first_review, limits output to 10 documents, and projects required fields.
+
+Problem 3: Category Loyalty & High Ratings
+    Strategy: Groups records by a compound key { user_id, category } while computing total rental count ($sum: 1) and average rating ($avg). Filters groups meeting the threshold (rentals >= 3 and avg_rating >= 9), rounds avg_rating to 2 decimal places, and sorts by user ID and category.
+
+
+PART 2: ITEM ANALYSIS & TEXT PROCESSING
+Problem 1: Item 2260466 Average Rating & Review Count
+    Strategy: Matches item ID 2260466 (handling string and integer data types), converts rating field to double, and aggregates total review count and average rating, rounding the rating to 2 decimal places.
+
+Problem 2: Top 5 Items Mentioning "Zipper" or "Pockets"
+    Strategy: Filters review text using a case-insensitive regular expression (/zipper|pockets/i), groups by item_id, retrieves the category name via $first, counts mentions, sorts descending by mention count, and limits results to top 5.
+
+Problem 3: Frequent Words in Romper Reviews
+    Strategy: Filters records for category "romper", converts review text to lowercase ($toLower), splits text into individual word arrays by space ($split), and unwinds the array ($unwind). Filters out common stop words using $nin, groups by word to count occurrences, sorts by count descending, and limits to top 10.
+
+      
+PART 3: ADVANCED METRICS & COHORT ANALYSIS
+Problem 1: Rental Purpose Share & Percentages
+    Strategy: Pre-calculates the overall valid rental total using countDocuments(). Aggregates transaction counts grouped by the rented for field, sorts by volume descending, and calculates percentage share ((count / total) * 100) rounded to 1 decimal place.
+
+Problem 2: 2016 Monthly Rental Distribution
+    Strategy: Parses review_date into date objects, extracts year and month using $year and $month date operators, filters for year == 2016, groups transaction counts by month number, sorts chronologically (1–12), and outputs formatted month totals.
+
+Problem 3: Cohort Retention Analysis
+    Strategy:
+        Truncates transaction dates to the beginning of each month ($dateTrunc) and groups by user_id to determine each user's cohort month ($min) and set of active rental months ($addToSet).
+        Evaluates retention flags per user for month 1 (+1 month), month 2 (+2 months), and month 3 (+3 months) relative to their cohort start date using $dateAdd and $in.
+        Groups by cohort string (YYYY-MM), sums cohort size and retained user counts per month, and calculates month-over-month retention percentages (m1_pct, m2_pct, m3_pct) rounded to 1 decimal place.
+        Sorts output chronologically by cohort.
