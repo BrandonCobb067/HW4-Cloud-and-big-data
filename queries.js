@@ -124,7 +124,7 @@ print("\nPart 3 - Problem 1");
 const totalRentals = transactions.countDocuments({"rented for": {$nin: [null, ""]}});
 
 const problem7 = transactions.aggregate([
-  {$match: {"rented for": {$nin: [null, ""]}}},
+  {$match: {"rented for": {$exists: true, $nin: [null, ""]}}},
   {$group: {
     _id: "$rented for",
     count: {$sum: 1}
